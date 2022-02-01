@@ -4,9 +4,14 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>2dfa8099-02cb-4897-bc6b-851db1381ff7</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.1" />
+    <PackageReference Include="StackExchange.Redis.Extensions.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="8.0.3" />
+    <PackageReference Include="StackExchange.Redis.Extensions.Newtonsoft" Version="8.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
 

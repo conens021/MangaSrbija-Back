@@ -1,10 +1,14 @@
 ﻿using MangaSrbija.BLL.mappers.Chapters;
 using MangaSrbija.BLL.mappers.Chapters.Photos;
+using MangaSrbija.BLL.mappers.MangaChapter;
 using MangaSrbija.BLL.services.MangaServices;
+using MangaSrbija.Presentation.Attributes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MangaSrbija.Presentation.Controllers
 {
+
     [Route("[controller]")]
     [ApiController]
     public class ChaptersController : ControllerBase
@@ -12,38 +16,62 @@ namespace MangaSrbija.Presentation.Controllers
 
         private readonly ChapterService _chapterService;
         private readonly ChapterPhotoService _chapterPhotoService;
+        private readonly JwtAuthenticationManager _jwtAuth;
 
         public ChaptersController(ChapterService chapterService
-                                , ChapterPhotoService chapterPhotoService)
+                                , ChapterPhotoService chapterPhotoService,
+                                JwtAuthenticationManager jwtAuth)
         {
             _chapterService = chapterService;
             _chapterPhotoService = chapterPhotoService;
+            _jwtAuth = jwtAuth;
         }
 
+        [HttpGet]
+        public ActionResult GetAllIds()
+        {
+            return Ok(_chapterService.GetAllIds());
+        }
 
         [HttpGet("manga/{id}")]
         public ActionResult GetAllByManga(int id)
         {
+
+
             return Ok(_chapterService.GetAll(id));
+        }
+
+        [HttpGet("new-releases")]
+        public ActionResult GetRecentlyUpdated([FromQuery] int perPage = 20, [FromQuery] int page = 1)
+        {
+
+            List<MangaChapterDTO> recentlyUpdated = _chapterService.GetRecentlyUpdated(page, perPage);
+
+
+            return Ok(recentlyUpdated);
         }
 
         [HttpGet("{id}")]
         public ActionResult Get(int id)
         {
+
+
             return Ok(_chapterService.GetById(id));
         }
 
         [HttpPost]
         public ActionResult Post([FromBody] CreateChapterDTO createChapterDTO)
         {
-            return Ok(_chapterService.CreateChapter(createChapterDTO));
+
+
+            return Ok(_chapterService.CreateChapter(createChapterDTO, _jwtAuth.GetBearerUser()));
         }
 
-        [HttpPatch]
-        public ActionResult Put([FromBody] UpdateChapterDTO updateChapterDTO)
+        [HttpPatch("{id}")]
+        public ActionResult Put(int id,[FromBody] UpdateChapterDTO updateChapterDTO)
         {
 
-            ChapterSingle chapterSingle = _chapterService.UpdateChapter(updateChapterDTO);
+            ChapterSingle chapterSingle = _chapterService.UpdateChapter(id,updateChapterDTO, _jwtAuth.GetBearerUser());
 
 
             return Ok(chapterSingle);
@@ -53,7 +81,7 @@ namespace MangaSrbija.Presentation.Controllers
         public ActionResult Delete(int id)
         {
 
-            return Ok(_chapterService.DeleteChapter(id));
+            return Ok(_chapterService.DeleteChapter(id, _jwtAuth.GetBearerUser()));
 
         }
 
@@ -63,6 +91,17 @@ namespace MangaSrbija.Presentation.Controllers
 
             List<ChapterPhotoSingle> chapterPhotos = _chapterPhotoService.GetChapterPhotos(chapterId);
 
+
+            return Ok(chapterPhotos);
+        }
+
+        [HttpGet("{chapterId}/photos/guest")]
+        public ActionResult GetFreeChatperPhotos(int chapterId)
+        {
+
+            List<ChapterPhotoSingle> chapterPhotos = _chapterPhotoService.GetChapterPhotos(chapterId);
+
+
             return Ok(chapterPhotos);
         }
 
@@ -71,7 +110,7 @@ namespace MangaSrbija.Presentation.Controllers
         {
 
             List<ChapterPhotoPath> chapterPhotos
-                = await _chapterPhotoService.UploadChapterPhotos(uploadChapterPhotosDTO, chapterId);
+                = await _chapterPhotoService.UploadChapterPhotos(uploadChapterPhotosDTO, chapterId,_jwtAuth.GetBearerUser());
 
             return Ok(chapterPhotos);
         }
@@ -81,7 +120,7 @@ namespace MangaSrbija.Presentation.Controllers
 
         {
 
-            _chapterPhotoService.DeleteChapterPhotos(chapterId, deleteChapterPhotosDTO);
+            _chapterPhotoService.DeleteChapterPhotos(chapterId, deleteChapterPhotosDTO, _jwtAuth.GetBearerUser());
 
 
             return Ok();
