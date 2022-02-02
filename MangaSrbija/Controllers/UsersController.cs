@@ -22,6 +22,40 @@ namespace MangaSrbija.Presentation.Controllers
             _jwtAuthenticationManager = jwtAuthenticationManager;
         }
 
+        [AllowAnonymous]
+        [HttpGet("ids")]
+        public ActionResult GetAllUsersIds()
+        {
+            List<int> ids = _userService.GetAllUsersIds();
+
+
+            return Ok(ids);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{id}")]
+        public ActionResult GetAllUsersIds(int id)
+        {
+
+            UserSingleDTO userDto = _userService.GetUserById(id);
+
+
+            return Ok(userDto);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("available-username/{username}")]
+        public ActionResult CheckUsername(string username)
+        {
+
+           _userService.CheckUsername(username);
+
+
+            return Ok();
+        }
+
+
+        [AllowAnonymous]
         [HttpPost]
         public ActionResult Post([FromBody] CreateUserDTO createUserDTO)
         {
