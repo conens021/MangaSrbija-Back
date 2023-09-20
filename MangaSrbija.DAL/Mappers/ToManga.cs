@@ -1,5 +1,5 @@
 ﻿using MangaSrbija.DAL.Entities.EManga;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace MangaSrbija.DAL.Mappers
 {
@@ -64,8 +64,15 @@ namespace MangaSrbija.DAL.Mappers
             manga.CreatedAt = Convert.ToDateTime(reader["CreatedAt"]);
             manga.UpdatedAt = Convert.ToDateTime(reader["UpdatedAt"]);
 
+            manga.LastChapterRd = Convert.ToDateTime(reader["LastChapterRd"]);
+
 
             return manga;
+        }
+
+        public static int GetId(SqlDataReader reader)
+        {
+            return Convert.ToInt32(reader["Id"]);
         }
     }
 }

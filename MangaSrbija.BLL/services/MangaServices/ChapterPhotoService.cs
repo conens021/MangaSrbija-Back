@@ -1,7 +1,9 @@
-﻿using MangaSrbija.BLL.helpers;
+﻿using MangaSrbija.BLL.exceptions;
+using MangaSrbija.BLL.helpers;
 using MangaSrbija.BLL.mappers;
 using MangaSrbija.BLL.mappers.Chapters;
 using MangaSrbija.BLL.mappers.Chapters.Photos;
+using MangaSrbija.BLL.mappers.UserAuth;
 using MangaSrbija.DAL.Entities.Chapter;
 using MangaSrbija.DAL.Entities.EManga;
 using MangaSrbija.DAL.Repositories;
@@ -26,11 +28,17 @@ namespace MangaSrbija.BLL.services.MangaServices
             _mangaRepository = mangaRepository;
         }
 
-        public async Task<List<ChapterPhotoPath>> UploadChapterPhotos(UploadChapterPhotosDTO uploadChapterPhotosDTO, int chapterId)
+        public async Task<List<ChapterPhotoPath>> UploadChapterPhotos(
+            UploadChapterPhotosDTO uploadChapterPhotosDTO,
+            int chapterId,
+            UserAuthorize user)
         {
+
+            CheckCategoryPolicy(user);
 
             List<ChapterPhoto> chapterPhotos = new List<ChapterPhoto>();
 
+            //Get chapter folder and update manga
             string folder = GetCoverPhotosFolder(chapterId, true);
 
             List<string> photosFiles = uploadChapterPhotosDTO.Photos;
@@ -39,14 +47,34 @@ namespace MangaSrbija.BLL.services.MangaServices
             {
                 ChapterPhoto cp = new ChapterPhoto();
 
-                cp.Path = await FileHandler.Save(file, folder);
+                byte[] data = FileHandler.GetFileBytes(file);
+
+                int height = ImageHandler.GetHeight(data);
+                int width = ImageHandler.GetWidth(data);
+
+                cp.Path = await FileHandler.WriteBytes(data,file, folder);
+                cp.Height = height;
+                cp.Width = width;
                 cp.ChapterId = chapterId;
                 cp.CreatedAt = DateTime.Now;
                 cp.UpdatedAt = DateTime.Now;
                 chapterPhotos.Add(cp);
             }
 
-            _chapterPhotoRepository.SaveAll(chapterPhotos);
+            try
+            {
+                _chapterPhotoRepository.SaveAll(chapterPhotos);
+            }
+            catch (Exception e)
+            {
+                foreach (ChapterPhoto photo in chapterPhotos)
+                {
+
+                    FileHandler.Delete(photo.Path);
+
+                    throw new BusinessException(e.Message, 500);
+                }
+            }
 
 
             return chapterPhotos.Select(cp => new ChapterPhotoPath(cp)).ToList();
@@ -61,8 +89,10 @@ namespace MangaSrbija.BLL.services.MangaServices
             return chapterPhotos.Select(cp => new ChapterPhotoSingle(cp)).ToList();
         }
 
-        public void DeleteChapterPhotos(int chapterId, List<DeleteChapterPhotoDTO> deleteChapterPhotosDTO)
+        public void DeleteChapterPhotos(int chapterId, List<DeleteChapterPhotoDTO> deleteChapterPhotosDTO,UserAuthorize user)
         {
+
+            CheckCategoryPolicy(user);
 
             foreach (DeleteChapterPhotoDTO photo in deleteChapterPhotosDTO)
             {
@@ -77,19 +107,29 @@ namespace MangaSrbija.BLL.services.MangaServices
 
             DAL.Entities.Chapter.Chapter chapter = _chapterRepository.GetById(chapterId);
 
+            if (chapter.Id == 0) throw new BusinessException("Chapter does not exists!", 404);
+
             Manga manga = _mangaRepository.GetById(chapter.MangaId);
 
             string folder = Path.Combine("chapters", manga.Title, chapter.Name);
 
             if (updateManga)
             {
-                manga.UpdatedAt = DateTime.Now;
+                manga.LastChapterRd = DateTime.Now;
 
-                _mangaRepository.UpdateManga(manga);
+                _mangaRepository.UpdateMangaChapterRD(manga);
             }
 
 
             return folder;
+        }
+
+        private void CheckCategoryPolicy(UserAuthorize user)
+        {
+            if (!(UserPolicy.isUserAdmin(user) || UserPolicy.isUserAuthor(user)))
+            {
+                throw new BusinessException("Only stuff members are able to access this api", 401);
+            }
         }
 
     }

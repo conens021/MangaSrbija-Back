@@ -11,6 +11,6 @@ namespace MangaSrbija.DAL.Repositories.category
         public void DeleteCategory(int id);
         public void UpdateCategory(Category category);
         Category GetByName(string name);
-        Dictionary<Category, List<Manga>> GetMangasByCategoryName(string name, int page, int size);
+        Dictionary<Category, List<Manga>> GetMangasByCategoryName(string name, int page, int size,string orderBy);
     }
 }

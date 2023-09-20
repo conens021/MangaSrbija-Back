@@ -1,5 +1,5 @@
 ﻿using MangaSrbija.DAL.Entities.Chapter;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace MangaSrbija.DAL.Mappers.chapters
 {
@@ -16,6 +16,10 @@ namespace MangaSrbija.DAL.Mappers.chapters
             chapterPhoto.Path = path == null ? "" : path;
 
             chapterPhoto.PageNumber = Convert.ToInt32(reader["PageNumber"]);
+
+            chapterPhoto.Height = Convert.ToInt32(reader["Height"]);
+
+            chapterPhoto.Width = Convert.ToInt32(reader["Width"]);
 
             chapterPhoto.CreatedAt = Convert.ToDateTime(reader["CreatedAt"]);
             chapterPhoto.UpdatedAt = Convert.ToDateTime(reader["UpdatedAt"]);

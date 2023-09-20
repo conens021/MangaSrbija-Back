@@ -2,8 +2,8 @@
 using MangaSrbija.DAL.Entities.EManga;
 using MangaSrbija.DAL.Mappers;
 using MangaSrbija.DAL.Mappers.category;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using System.Data.SqlClient;
 
 namespace MangaSrbija.DAL.Repositories.category
 {
@@ -154,7 +154,7 @@ namespace MangaSrbija.DAL.Repositories.category
             }
         }
 
-        public Dictionary<Category, List<Manga>> GetMangasByCategoryName(string name, int page, int size)
+        public Dictionary<Category, List<Manga>> GetMangasByCategoryName(string name, int page, int size,string orderBy)
         {
             Dictionary<Category, List<Manga>> dict = new();
 
@@ -167,6 +167,7 @@ namespace MangaSrbija.DAL.Repositories.category
                     command.CommandType = System.Data.CommandType.StoredProcedure;
 
                     command.Parameters.AddWithValue("@CategoryName", name);
+                    command.Parameters.AddWithValue("@OrderBy", orderBy);
 
                     connection.Open();
 

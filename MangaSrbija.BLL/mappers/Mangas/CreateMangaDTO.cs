@@ -1,7 +1,6 @@
 ﻿using MangaSrbija.DAL.Entities.EManga;
-using Microsoft.AspNetCore.Http;
 
-namespace MangaSrbija.BLL.mappers
+namespace MangaSrbija.BLL.mappers.Mangas
 {
     public class CreateMangaDTO
     {
@@ -28,6 +27,9 @@ namespace MangaSrbija.BLL.mappers
             mangaSingle.Summary = Summary;
             mangaSingle.Type = Type;
             mangaSingle.CoverPhoto = coverPhotoPath;
+            mangaSingle.CreatedAt = DateTime.Now;
+            mangaSingle.UpdatedAt = DateTime.Now;
+
 
             return mangaSingle;
         }
@@ -36,5 +38,6 @@ namespace MangaSrbija.BLL.mappers
         public string Title { get; set; } = "";
         public string Summary { get; set; } = "";
         public string Type { get; set; } = "";
+
     }
 }

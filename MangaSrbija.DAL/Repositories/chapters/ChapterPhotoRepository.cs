@@ -1,8 +1,8 @@
 ﻿using MangaSrbija.DAL.Entities.Chapter;
 using MangaSrbija.DAL.Mappers.chapters;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
-using System.Data.SqlClient;
 
 namespace MangaSrbija.DAL.Repositories.chapters
 {
@@ -14,22 +14,6 @@ namespace MangaSrbija.DAL.Repositories.chapters
         public ChapterPhotoRepository(IConfiguration configuration)
         {
             _configuration = configuration;
-        }
-
-
-        public void Delete(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<ChapterPhoto> GetAllByChapterId(int mangaId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Save(ChapterPhoto chapterPhotos)
-        {
-            throw new NotImplementedException();
         }
 
 
@@ -76,9 +60,12 @@ namespace MangaSrbija.DAL.Repositories.chapters
                 {
 
                     command.Transaction = transaction;
-                    command.CommandText = "Insert into ChapterPhotos values (@Path,@PageNumber,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,@ChapterId)";
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "SaveChapterPhotos";
 
                     command.Parameters.Add(new SqlParameter("@Path", SqlDbType.NVarChar));
+                    command.Parameters.Add(new SqlParameter("@Height", SqlDbType.Int));
+                    command.Parameters.Add(new SqlParameter("@Width", SqlDbType.Int));
                     command.Parameters.Add(new SqlParameter("@PageNumber", SqlDbType.Int));
                     command.Parameters.Add(new SqlParameter("@ChapterId", SqlDbType.Int));
 
@@ -87,8 +74,10 @@ namespace MangaSrbija.DAL.Repositories.chapters
                         foreach (var chapterPhoto in chapterPhotos)
                         {
                             command.Parameters[0].Value = chapterPhoto.Path;
-                            command.Parameters[1].Value = chapterPhoto.PageNumber;
-                            command.Parameters[2].Value = chapterPhoto.ChapterId;
+                            command.Parameters[1].Value = chapterPhoto.Height;
+                            command.Parameters[2].Value = chapterPhoto.Width;
+                            command.Parameters[3].Value = chapterPhoto.PageNumber;
+                            command.Parameters[4].Value = chapterPhoto.ChapterId;
 
                             if (command.ExecuteNonQuery() != 1)
                             {

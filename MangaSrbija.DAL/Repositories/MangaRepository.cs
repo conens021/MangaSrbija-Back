@@ -1,10 +1,8 @@
-﻿using MangaSrbija.DAL.Entities.Category;
-using MangaSrbija.DAL.Entities.EManga;
+﻿using MangaSrbija.DAL.Entities.EManga;
 using MangaSrbija.DAL.Mappers;
-using MangaSrbija.DAL.Mappers.category;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
-using System.Data.SqlClient;
 
 namespace MangaSrbija.DAL.Repositories
 {
@@ -103,7 +101,26 @@ namespace MangaSrbija.DAL.Repositories
                     command.Parameters.AddWithValue("@Type", manga.Type);
                     command.Parameters.AddWithValue("@MangaId", manga.Id);
                     command.Parameters.AddWithValue("@MangaCategories", manga.Categories);
-                    
+
+                    connection.Open();
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void UpdateMangaChapterRD(Manga manga)
+        {
+            string SQL = "Update mangas set LastChapterRd = @LastChapterRD where id = @MangaId";
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+            {
+                using (SqlCommand command = new SqlCommand(SQL, connection))
+                {
+
+                    command.Parameters.AddWithValue("@MangaId", manga.Id);
+                    command.Parameters.AddWithValue("@LastChapterRD", manga.LastChapterRd);
+
                     connection.Open();
 
                     command.ExecuteNonQuery();
@@ -132,9 +149,9 @@ namespace MangaSrbija.DAL.Repositories
             }
         }
 
-        public List<Manga> GetRecentlyUpdated(int perPage)
+        public List<Manga> GetMostPopular(int page,int perPage)
         {
-            string SQL = "Select TOP(@PerPage) * from Mangas ORDER BY UpdatedAt DESC";
+            string SQL = "GetMostPopularMangas";
 
             List<Manga> mangas = new List<Manga>();
 
@@ -142,7 +159,11 @@ namespace MangaSrbija.DAL.Repositories
             {
                 using (SqlCommand command = new SqlCommand(SQL, connection))
                 {
+
+                    command.CommandType = CommandType.StoredProcedure;
+
                     command.Parameters.AddWithValue("@PerPage", perPage);
+                    command.Parameters.AddWithValue("@Page", page);
 
                     connection.Open();
 
@@ -210,6 +231,211 @@ namespace MangaSrbija.DAL.Repositories
                             throw;
                         }
                     }
+                }
+            }
+        }
+
+        public double RateManga(int mangaId,int userId, double rating)
+        {
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+            {
+                connection.Open();
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    using (SqlCommand command = connection.CreateCommand())
+                    {
+
+
+                        double mangaRating = 0.00;
+
+                        command.Transaction = transaction;
+                        command.CommandText = "RateMangaByUser";
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        command.Parameters.AddWithValue("@Rating", rating);
+                        command.Parameters.AddWithValue("@UserId", userId);
+                        command.Parameters.AddWithValue("@MangaId", mangaId);
+
+                        try
+                        {
+                            mangaRating = Convert.ToDouble(command.ExecuteScalar());
+
+                            command.CommandText = "Update mangas Set rating = @MangaRating WHERE id = @MangaId";
+                            command.Parameters.Clear();
+                            command.Parameters.AddWithValue("@MangaId", mangaId);
+                            command.Parameters.AddWithValue("@MangaRating", mangaRating);
+
+                            command.CommandType = CommandType.Text;
+
+                            command.ExecuteNonQuery();
+
+                            transaction.Commit();
+
+
+                            return mangaRating;
+                        }
+                        catch (Exception e)
+                        {
+                            transaction.Rollback();
+                            throw new Exception(e.Message);
+                        }
+
+                    }
+                }
+            }
+        }
+
+        public int CountAll()
+        {
+            string SQL = "select count(Mangas.Id) as count from mangas";
+
+            List<Manga> mangas = new List<Manga>();
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+            {
+                using (SqlCommand command = new SqlCommand(SQL, connection))
+                {
+
+                    connection.Open();
+
+                    int count = Convert.ToInt32(command.ExecuteScalar());
+
+
+                    return count;
+                }
+            }
+        }
+
+        public List<Manga> GetAll(string orderBy, int page, int perPage)
+        {
+            string SQL = "GetAll";
+
+            List<Manga> mangas = new List<Manga>();
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+            {
+                using (SqlCommand command = new SqlCommand(SQL, connection))
+                {
+
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    command.Parameters.AddWithValue("@OrderBy", orderBy);
+                    command.Parameters.AddWithValue("@PerPage", perPage);
+                    command.Parameters.AddWithValue("@Page", page);
+
+                    connection.Open();
+
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (!reader.HasRows) return mangas;
+
+                    while (reader.Read())
+                    {
+                        Manga manga = ToManga.WithAllFields(reader);
+                        mangas.Add(manga);
+                    }
+
+
+                    return mangas;
+                }
+            }
+        }
+
+        public List<Manga> GetByLetter(string letter, string orderBy, int page, int perPage)
+        {
+            string SQL = "GetByStartingLetter";
+
+            List<Manga> mangas = new List<Manga>();
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+            {
+                using (SqlCommand command = new SqlCommand(SQL, connection))
+                {
+
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    command.Parameters.AddWithValue("@StartingLetter", letter);
+                    command.Parameters.AddWithValue("@OrderBy", orderBy);
+                    command.Parameters.AddWithValue("@PerPage", perPage);
+                    command.Parameters.AddWithValue("@Page", page);
+
+                    connection.Open();
+
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (!reader.HasRows) return mangas;
+
+                    while (reader.Read())
+                    {
+                        Manga manga = ToManga.WithAllFields(reader);
+                        mangas.Add(manga);
+                    }
+
+
+                    return mangas;
+                }
+            }
+        }
+
+        public List<int> GetAllIds()
+        {
+            string SQL = "select id from Mangas";
+
+            List<int> ids = new List<int>();
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+            {
+                using (SqlCommand command = new SqlCommand(SQL, connection))
+                {
+
+
+                    connection.Open();
+
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (!reader.HasRows) return ids;
+
+                    while (reader.Read())
+                    {
+                        int id = ToManga.GetId(reader);
+                        ids.Add(id);
+                    }
+
+
+                    return ids;
+                }
+            }
+        }
+
+        public List<Manga> GetByNameOrSummary(string query)
+        {
+            string SQL = "SearchMangas";
+
+            List<Manga> mangas = new List<Manga>();
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+            {
+                using (SqlCommand command = new SqlCommand(SQL, connection))
+                {
+
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    command.Parameters.AddWithValue("@Query", query);
+
+                    connection.Open();
+
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (!reader.HasRows) return mangas;
+
+                    while (reader.Read())
+                    {
+                        Manga manga = ToManga.WithAllFields(reader);
+                        mangas.Add(manga);
+                    }
+
+
+                    return mangas;
                 }
             }
         }

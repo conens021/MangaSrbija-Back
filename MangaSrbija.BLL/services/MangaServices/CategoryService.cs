@@ -1,6 +1,8 @@
 ﻿using MangaSrbija.BLL.exceptions;
-using MangaSrbija.BLL.mappers;
+using MangaSrbija.BLL.helpers;
 using MangaSrbija.BLL.mappers.Categories;
+using MangaSrbija.BLL.mappers.Mangas;
+using MangaSrbija.BLL.mappers.UserAuth;
 using MangaSrbija.DAL.Entities.Category;
 using MangaSrbija.DAL.Entities.EManga;
 using MangaSrbija.DAL.Repositories.category;
@@ -46,10 +48,12 @@ namespace MangaSrbija.BLL.services.MangaServices
             return new CategorySingle(category);
         }
 
-        public CategoryMangasDTO GetCategoryMangas(string name, int page, int size)
+        public CategoryMangasDTO GetCategoryMangas(string name, int page, int size,string orderBy)
         {
 
-            Dictionary<Category, List<Manga>> categoryMangas = _categoryRepository.GetMangasByCategoryName(name, page, size);
+            string orderByValue = OrderBy.Manga(orderBy);
+
+            Dictionary<Category, List<Manga>> categoryMangas = _categoryRepository.GetMangasByCategoryName(name, page, size, orderByValue);
 
             if (categoryMangas.Count == 0)
             {
@@ -71,13 +75,18 @@ namespace MangaSrbija.BLL.services.MangaServices
                                          );
         }
 
-        public void Delete(CategorySingle category)
+        public void Delete(CategorySingle category, UserAuthorize user)
         {
+
+            CheckCategoryPolicy( user);
+
             _categoryRepository.DeleteCategory(category.ToCategory().Id);
         }
 
-        public CategorySingle Create(CreateCategoryDTO createCategory)
+        public CategorySingle Create(CreateCategoryDTO createCategory,UserAuthorize user)
         {
+
+            CheckCategoryPolicy(user);
 
             int id = _categoryRepository.SaveCategory(createCategory.ToCategory());
 
@@ -85,8 +94,11 @@ namespace MangaSrbija.BLL.services.MangaServices
             return (createCategory.ToCategorySingle(id));
         }
 
-        public CategorySingle ChangeCategoryName(CategorySingle categorySingle)
+        public CategorySingle ChangeCategoryName(CategorySingle categorySingle,UserAuthorize user)
         {
+
+            CheckCategoryPolicy(user);
+
             //If category is not found GetById will throw error
             GetById(categorySingle.Id);
 
@@ -95,5 +107,14 @@ namespace MangaSrbija.BLL.services.MangaServices
 
             return categorySingle;
         }
+
+        private void CheckCategoryPolicy(UserAuthorize user)
+        {
+            if (!(UserPolicy.isUserAdmin(user) || UserPolicy.isUserAuthor(user)))
+            {
+                throw new BusinessException("Only stuff members are able to access this api", 401);
+            }
+        }
+
     }
 }

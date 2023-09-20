@@ -1,5 +1,8 @@
 ﻿using MangaSrbija.BLL.exceptions;
+using MangaSrbija.BLL.helpers;
 using MangaSrbija.BLL.mappers.Chapters;
+using MangaSrbija.BLL.mappers.MangaChapter;
+using MangaSrbija.BLL.mappers.UserAuth;
 using MangaSrbija.DAL.Entities.Chapter;
 using MangaSrbija.DAL.Repositories.chapters;
 
@@ -30,8 +33,29 @@ namespace MangaSrbija.BLL.services.MangaServices
             return _chapterRepository.GetAllByMangaId(id).Select(ch => new ChapterSingle(ch)).ToList();
         }
 
-        public ChapterSingle CreateChapter(CreateChapterDTO createChapterDto)
+        public List<MangaChapterDTO> GetRecentlyUpdated(int page, int perPage)
         {
+
+            List<MangaChapterDTO> mangas = _chapterRepository.GetRecentlyUpdated(page, perPage)
+                .Select(mc => new MangaChapterDTO(mc.Manga, mc.Chapter)).ToList();
+
+
+            return mangas;
+        }
+
+        public List<int> GetAllIds()
+        {
+
+            List<int> chaptersIds = _chapterRepository.GetAll();
+
+
+            return chaptersIds;
+        }
+
+        public ChapterSingle CreateChapter(CreateChapterDTO createChapterDto,UserAuthorize user)
+        {
+
+            CheckChapterService(user);
 
             int id = _chapterRepository.Save(createChapterDto.ToChapter());
 
@@ -39,26 +63,38 @@ namespace MangaSrbija.BLL.services.MangaServices
             return new ChapterSingle(createChapterDto, id);
         }
 
-        public ChapterSingle UpdateChapter(UpdateChapterDTO updateChapterDTO)
+        public ChapterSingle UpdateChapter(int id, UpdateChapterDTO updateChapterDTO, UserAuthorize user)
         {
-            GetById(updateChapterDTO.Id);
 
-            Chapter chapter = _chapterRepository.Update(updateChapterDTO.ToChapter());
+            CheckChapterService(user);
 
-            chapter.UpdatedAt = DateTime.Now;
+            ChapterSingle chapterSingle = GetById(id);
 
-            ChapterSingle cs = new ChapterSingle(chapter);
+            _chapterRepository.Update(updateChapterDTO.ToChapter(id));
 
-            return cs;
+            updateChapterDTO.ToChapterSingle(chapterSingle);
+
+            return chapterSingle;
         }
 
-        public ChapterSingle DeleteChapter(int id)
+        public ChapterSingle DeleteChapter(int id, UserAuthorize user)
         {
+
+            CheckChapterService(user);
+
             ChapterSingle chapterSingle = GetById(id);
 
             _chapterRepository.Delete(id);
 
             return chapterSingle;
+        }
+
+        private void CheckChapterService(UserAuthorize user)
+        {
+            if (!(UserPolicy.isUserAdmin(user) || UserPolicy.isUserAuthor(user)))
+            {
+                throw new BusinessException("Only stuff members are able to access this api", 401);
+            }
         }
     }
 }

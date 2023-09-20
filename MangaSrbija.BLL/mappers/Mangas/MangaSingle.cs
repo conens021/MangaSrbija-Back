@@ -1,7 +1,7 @@
 ﻿
 using MangaSrbija.DAL.Entities.EManga;
 
-namespace MangaSrbija.BLL.mappers
+namespace MangaSrbija.BLL.mappers.Mangas
 {
     public class MangaSingle
     {
@@ -61,6 +61,5 @@ namespace MangaSrbija.BLL.mappers
         public string Categories { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
     }
 }

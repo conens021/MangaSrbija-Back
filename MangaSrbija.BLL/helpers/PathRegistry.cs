@@ -14,8 +14,13 @@
             WebRootPath = webRootPath;
         }
 
-        public static PathRegistry GetInstance(string contentRootPath = null, string webRootPath = null) =>
-            _instance = _instance ?? new PathRegistry(contentRootPath, webRootPath);
+        private PathRegistry(string contentRootPath, string webRootPath,string templatePath)
+        {
+            ContentRootPath = contentRootPath;
+            WebRootPath = webRootPath;
+        }
 
+        public static PathRegistry GetInstance(string contentRootPath = null, string webRootPath = null) =>
+           _instance = _instance ?? new PathRegistry(contentRootPath, webRootPath);
     }
 }

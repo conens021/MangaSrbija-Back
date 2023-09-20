@@ -1,8 +1,7 @@
-﻿
-using MangaSrbija.BLL.mappers.Categories;
+﻿using MangaSrbija.BLL.mappers.Categories;
 using MangaSrbija.DAL.Entities.Category;
 
-namespace MangaSrbija.BLL.mappers
+namespace MangaSrbija.BLL.mappers.Mangas
 {
     public class SetMangaCategoriesDTO
     {

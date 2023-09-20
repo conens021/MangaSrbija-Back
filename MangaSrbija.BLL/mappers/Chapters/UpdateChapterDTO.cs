@@ -5,19 +5,27 @@ namespace MangaSrbija.BLL.mappers.Chapters
     public class UpdateChapterDTO
     {
 
-        public Chapter ToChapter()
+
+        public void ToChapterSingle(ChapterSingle cs)
         {
+            cs.UpdatedAt = DateTime.Now;
+            cs.isPrime = isPrime;
+            cs.Name = Name;
+        }
+
+        public Chapter ToChapter(int id)
+        {
+
             Chapter chapter = new Chapter();
-            chapter.Id = Id;
             chapter.Name = Name;
-            chapter.MangaId = MangaId;
+            chapter.isPrime = isPrime;
+            chapter.Id = id;
 
             return chapter;
         }
 
-        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int MangaId { get; set; }
+        public bool isPrime { get; set; } = true;
 
     }
 }

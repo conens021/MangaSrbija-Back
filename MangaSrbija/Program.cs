@@ -9,9 +9,7 @@ using MangaSrbija.DAL.Repositories.mangasCategories;
 using MangaSrbija.DAL.Repositories.mangaUserFavorites;
 using MangaSrbija.DAL.Repositories.users;
 using MangaSrbija.Presentation.Attributes;
-using MangaSrbija.Presentation.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis.Extensions.Core.Configuration;
 using StackExchange.Redis.Extensions.Newtonsoft;
@@ -80,7 +78,10 @@ var app = builder.Build();
 
 var environment = builder.Environment;
 
-PathRegistry.GetInstance(environment.ContentRootPath, Path.Combine(environment.ContentRootPath, "wwwroot", "Images"));
+
+
+PathRegistry.GetInstance(environment.ContentRootPath, 
+    Path.Combine(environment.ContentRootPath, "wwwroot", "Images"));
 
 
 if (app.Environment.IsDevelopment())

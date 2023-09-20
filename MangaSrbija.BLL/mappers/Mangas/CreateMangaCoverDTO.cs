@@ -1,4 +1,4 @@
-﻿namespace MangaSrbija.BLL.mappers
+﻿namespace MangaSrbija.BLL.mappers.Mangas
 {
     public class CreateMangaCoverDTO
     {

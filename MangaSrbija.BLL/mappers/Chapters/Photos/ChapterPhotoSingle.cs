@@ -10,6 +10,8 @@ namespace MangaSrbija.BLL.mappers.Chapters.Photos
             Id = chapterPhoto.Id;
             Path = chapterPhoto.Path;
             PageNumber = chapterPhoto.PageNumber;
+            Height = chapterPhoto.Height;
+            Width = chapterPhoto.Width;
             CreatedAt = chapterPhoto.CreatedAt; 
             UpdatedAt = chapterPhoto.UpdatedAt;
             ChapterId = chapterPhoto.ChapterId;
@@ -33,6 +35,8 @@ namespace MangaSrbija.BLL.mappers.Chapters.Photos
         public int Id { get; set; }
         public string Path { get; set; } = string.Empty;
         public int PageNumber { get; set; } = 1;
+        public int Width { get; set; }
+        public int Height { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public int ChapterId { get; set; }

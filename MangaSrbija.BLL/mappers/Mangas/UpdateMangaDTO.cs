@@ -1,6 +1,7 @@
-﻿using MangaSrbija.DAL.Entities.EManga;
+﻿using MangaSrbija.BLL.mappers.Mangas;
+using MangaSrbija.DAL.Entities.EManga;
 
-namespace MangaSrbija.BLL.mappers
+namespace MangaSrbija.BLL.mappers.Mangas
 {
     public class UpdateMangaDTO
     {

@@ -1,4 +1,6 @@
-﻿namespace MangaSrbija.BLL.mappers.Categories
+﻿using MangaSrbija.BLL.mappers.Mangas;
+
+namespace MangaSrbija.BLL.mappers.Categories
 {
     public class CategoryMangasDTO
     {

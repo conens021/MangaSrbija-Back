@@ -1,9 +1,9 @@
-﻿using MangaSrbija.BLL.mappers;
+﻿using MangaSrbija.BLL.mappers.Mangas;
 using MangaSrbija.DAL.Repositories;
 using MangaSrbija.DAL.Entities.EManga;
 using MangaSrbija.BLL.helpers;
 using MangaSrbija.BLL.exceptions;
-using MangaSrbija.BLL.mappers.Categories;
+using MangaSrbija.BLL.mappers.UserAuth;
 
 namespace MangaSrbija.BLL.services.MangaServices
 {
@@ -29,13 +29,16 @@ namespace MangaSrbija.BLL.services.MangaServices
             return new MangaSingle(manga);
         }
 
-        public async Task<MangaSingle> CreateManga(CreateMangaDTO createMangaDTO)
+        public async Task<MangaSingle> CreateManga(CreateMangaDTO createMangaDTO, UserAuthorize user)
         {
+
+            CheckMangaPolicy(user);
+
             String coverPhotoPath = "";
 
             if (!string.IsNullOrEmpty(createMangaDTO.CoverPhotoFile))
             {
-                coverPhotoPath = await FileHandler.Save(createMangaDTO.CoverPhotoFile,"manga-covers");
+                coverPhotoPath = await FileHandler.Save(createMangaDTO.CoverPhotoFile, "manga-covers");
             }
 
             int id = _mangaRepository.SaveManga(createMangaDTO.ToManga(coverPhotoPath));
@@ -48,9 +51,69 @@ namespace MangaSrbija.BLL.services.MangaServices
             return mangaSingle;
         }
 
-
-        public async Task<MangaSingle> UploadMangaCover(CreateMangaCoverDTO mangaCoverDTO)
+        public List<int> GetAllIds()
         {
+
+            List<int> ids = _mangaRepository.GetAllIds();
+
+
+            return ids;
+        }
+
+        public List<MangaSingle> GetAll(string orderBy, int page, int perPage)
+        {
+
+            string orderByValue = OrderBy.Manga(orderBy);
+
+            List<MangaSingle> mangas = _mangaRepository.GetAll(orderByValue, page, perPage)
+                .Select(m => new MangaSingle(m)).ToList();
+
+
+            return mangas;
+        }
+
+        public int CountAllMangas()
+        {
+            int count = _mangaRepository.CountAll();
+
+
+            return count;
+        }
+
+        public List<MangaSingle> SearchMangas(string query)
+        {
+            List<Manga> mangas = _mangaRepository.GetByNameOrSummary(query);
+
+
+            return mangas.Select(m => new MangaSingle(m)).ToList();
+        }
+
+        public List<MangaSingle> GetByLetter(string letter, string orderBy, int page, int perPage)
+        {
+
+            string orderByValue = OrderBy.Manga(orderBy);
+
+            List<MangaSingle> mangas = new List<MangaSingle>();
+
+            if (letter.Equals("all"))
+            {
+                mangas = _mangaRepository.GetAll(orderByValue, page, perPage)
+                    .Select(m => new MangaSingle(m)).ToList();
+                return mangas;
+            }
+
+            mangas = _mangaRepository.GetByLetter(letter, orderByValue, page, perPage)
+                 .Select(m => new MangaSingle(m)).ToList();
+
+
+            return mangas;
+        }
+
+        public async Task<MangaSingle> UploadMangaCover(CreateMangaCoverDTO mangaCoverDTO, UserAuthorize user)
+        {
+
+            CheckMangaPolicy(user);
+
 
             MangaSingle mangaSingle = GetById(mangaCoverDTO.MangaId);
 
@@ -58,7 +121,7 @@ namespace MangaSrbija.BLL.services.MangaServices
 
             if (!string.IsNullOrEmpty(mangaCoverDTO.MangaCoverFile))
             {
-                coverPhotoPath = await FileHandler.Save(mangaCoverDTO.MangaCoverFile,"manga-covers");
+                coverPhotoPath = await FileHandler.Save(mangaCoverDTO.MangaCoverFile, "manga-covers");
             }
 
             mangaSingle.CoverPhoto = coverPhotoPath;
@@ -69,8 +132,12 @@ namespace MangaSrbija.BLL.services.MangaServices
             return mangaSingle;
         }
 
-        public MangaSingle DeleteManga(int id)
+
+        public MangaSingle DeleteManga(int id, UserAuthorize user)
         {
+
+            CheckMangaPolicy(user);
+
 
             MangaSingle mangaSingle = GetById(id);
 
@@ -84,7 +151,7 @@ namespace MangaSrbija.BLL.services.MangaServices
             }
             catch (Exception ex)
             {
-                throw new BusinessException("Cover photo of manga you trying to delete does not exists!", 404);
+                _mangaRepository.DeleteManga(id);
             }
 
 
@@ -92,8 +159,12 @@ namespace MangaSrbija.BLL.services.MangaServices
         }
 
 
-        public MangaSingle UpdateManga(UpdateMangaDTO updateMangaDTO)
+        public MangaSingle UpdateManga(UpdateMangaDTO updateMangaDTO, UserAuthorize user)
         {
+
+            CheckMangaPolicy(user);
+
+
             MangaSingle mangaSingle = GetById(updateMangaDTO.Id);
 
             _mangaRepository.UpdateManga(updateMangaDTO.ToManga());
@@ -102,15 +173,38 @@ namespace MangaSrbija.BLL.services.MangaServices
             return updateMangaDTO.ToMangaSingle(mangaSingle);
         }
 
-        public List<MangaSingle> GetRecentlyUpdated(int perPage)
+        public List<MangaSingle> GetMostPopular(int page, int perPage)
         {
-
-            List<MangaSingle> mangas = _mangaRepository.GetRecentlyUpdated(perPage).Select(m => new MangaSingle(m)).ToList();
+            List<MangaSingle> mangas = _mangaRepository.GetMostPopular(page, perPage).Select(m => new MangaSingle(m)).ToList();
 
 
             return mangas;
         }
 
-       
+        public double RateManga(int mangaId, UserAuthorize user, MangaRatingDTO mangaRatingDTO)
+        {
+
+            try
+            {
+
+                int userId = Convert.ToInt32(user.UserId);
+
+
+                return _mangaRepository.RateManga(mangaId, userId, mangaRatingDTO.Rating);
+            }
+            catch (Exception e)
+            {
+                throw new BusinessException(e.Message, 500);
+            }
+
+        }
+
+        private void CheckMangaPolicy(UserAuthorize user)
+        {
+            if (!(UserPolicy.isUserAdmin(user) || UserPolicy.isUserAuthor(user)))
+            {
+                throw new BusinessException("Only stuff members are able to access this api", 401);
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using MangaSrbija.DAL.Entities.Category;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace MangaSrbija.DAL.Mappers.category
 {

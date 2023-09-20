@@ -1,8 +1,10 @@
 ﻿using MangaSrbija.BLL.exceptions;
-using MangaSrbija.BLL.mappers;
+using MangaSrbija.BLL.mappers.Mangas;
 using MangaSrbija.BLL.mappers.Categories;
 using MangaSrbija.DAL.Repositories;
 using MangaSrbija.DAL.Repositories.mangasCategories;
+using MangaSrbija.BLL.mappers.UserAuth;
+using MangaSrbija.BLL.helpers;
 
 namespace MangaSrbija.BLL.services.MangaServices
 {
@@ -23,13 +25,16 @@ namespace MangaSrbija.BLL.services.MangaServices
             _mangasCategoriesRepository = mangasCategoriesRepository;
         }
 
-        public MangaSingle SetMangaCategories(List<CategorySingle> mangaCategories, int mangaId)
+        public MangaSingle SetMangaCategories(List<CategorySingle> mangaCategories,
+            int mangaId,
+            UserAuthorize user)
         {
+
+            CheckMangaCategoryPolicy(user);
 
             MangaSingle mangaSingle = _mangaService.GetById(mangaId);
             List<string> categories = GetExistsingMangaCategories(mangaSingle);
 
-            //get just new categores
             List<CategorySingle> newItems = mangaCategories.Where(mc => 
                 !categories.Any(category => category.ToLower().Equals(mc.Name.ToLower()))).ToList();
 
@@ -55,16 +60,18 @@ namespace MangaSrbija.BLL.services.MangaServices
             return mangaSingle;
         }
 
-        public MangaSingle DeleleMangaCategory(CategorySingle categorySingle, int mangaId)
+        public MangaSingle DeleleMangaCategory(CategorySingle categorySingle, int mangaId, UserAuthorize user)
         {
+
+            CheckMangaCategoryPolicy(user);
 
             MangaSingle mangaSingle = _mangaService.GetById(mangaId);
 
             List<string> categories = GetExistsingMangaCategories(mangaSingle);
 
-            //filter out category from manga category list that we whant to delete
-            //we get new list without that category
-            List<string> newMangaCategoryList = categories.Where(c => !c.ToLower().Equals(categorySingle.Name.ToLower())).ToList();
+
+            List<string> newMangaCategoryList = 
+                categories.Where(c => !c.ToLower().Equals(categorySingle.Name.ToLower())).ToList();
 
             if (newMangaCategoryList.Count > 0)
             {
@@ -103,8 +110,10 @@ namespace MangaSrbija.BLL.services.MangaServices
             return mangas;
         }
 
-        public List<MangaSingle> DeleteCategory(int id)
+        public List<MangaSingle> DeleteCategory(int id, UserAuthorize user)
         {
+
+            CheckMangaCategoryPolicy(user);
 
             CategorySingle categorySingle = _categoryService.GetById(id);
 
@@ -124,9 +133,8 @@ namespace MangaSrbija.BLL.services.MangaServices
                 manga.Categories = string.Join(",", filtered);
             }
 
-            //delete category
-            _categoryService.Delete(categorySingle);
-            //update manga list
+            _categoryService.Delete(categorySingle, user);
+            
             _mangaRepository.UpdateAll(mangas.Select(ms => ms.ToManga()).ToList());
 
             return mangas;
@@ -150,6 +158,14 @@ namespace MangaSrbija.BLL.services.MangaServices
 
 
             return categories;
+        }
+
+        private void CheckMangaCategoryPolicy(UserAuthorize user)
+        {
+            if (!(UserPolicy.isUserAdmin(user) || UserPolicy.isUserAuthor(user)))
+            {
+                throw new BusinessException("Only stuff members are able to access this api", 401);
+            }
         }
     }
 }
